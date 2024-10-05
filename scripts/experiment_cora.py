@@ -77,11 +77,15 @@ if __name__ == "__main__":
         # Ensure masked_adj is on CPU
         masked_adj = masked_adj.cpu()
         print(masked_adj)
+        num_nonzero = (masked_adj > exp_args.mask_thresh).sum()
+        print(f"Node {node_id}: masked_adj has {num_nonzero} edges above the threshold.")
 
         rows, cols = np.where(masked_adj == 1)
         num_edges_exp = len(rows)
         print(num_edges_exp)
         exp_edge_index = torch.tensor(np.vstack((rows, cols)), dtype=torch.long)
+
+        # exp_edge_index = (masked_adj == 1).nonzero().t().contiguous()
 
         
         # Create the exp_sub_graph Data object

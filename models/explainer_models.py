@@ -9,7 +9,7 @@ import networkx as nx
 from utils.common_utils import mutag_dgl_to_networkx, get_mutag_color_dict, ba_shapes_dgl_to_networkx
 import torch_geometric
 import torch.nn.functional as F
-# from torch_geometric.utils import k_hop_subgraph
+from torch_geometric.utils import k_hop_subgraph
 
 class GraphExplainerEdge(torch.nn.Module):
     def __init__(self, base_model, G_dataset, test_indices, args, fix_exp=None):
@@ -235,7 +235,7 @@ class NodeExplainerEdgeMulti(torch.nn.Module):
 
         # Only run on the first few nodes for a quick check
         num_nodes_to_explain = 2  # Adjust as needed
-        for gid in tqdm.tqdm(listNodes[:num_nodes_to_explain]):
+        for gid in tqdm.tqdm(listNodes):
             gid = gid.long()
             ori_pred = self.base_model(self.G_dataset.x.to(self.device), self.G_dataset.edge_index.to(self.device))
             ori_pred_label = torch.argmax(ori_pred[gid]).item()
@@ -266,17 +266,15 @@ class NodeExplainerEdgeMulti(torch.nn.Module):
             optimizer = torch.optim.Adam(explainer.parameters(), lr=self.args.lr, weight_decay=0)
             explainer.train()
 
-            # Run the training process for the explainer model
             for epoch in range(self.args.num_epochs):
                 optimizer.zero_grad()
-                pred1, pred2 = explainer()  # Forward pass of the explainer
+                pred1, pred2 = explainer()
                 bpr1, bpr2, l1, loss = explainer.loss(
                     pred1, pred2, pred_label, self.args.gam, self.args.lam, self.args.alp
                 )
                 loss.backward()
                 optimizer.step()
 
-            # Get the masked adjacency matrix after explanation
             masked_adj = explainer.get_masked_adj()
             if masked_adj is not None:
                 new_edge_num = len(masked_adj[masked_adj > self.args.mask_thresh])
@@ -392,42 +390,28 @@ class ExplainModelNodeMulti(torch.nn.Module):
     def __init__(self, graph, base_model, target_node, args):
         super(ExplainModelNodeMulti, self).__init__()
         self.graph = graph
-        self.num_nodes = graph.num_nodes
         self.base_model = base_model
         self.target_node = target_node.long()
         self.args = args
         self.device = torch.device('cuda' if args.gpu else 'cpu')
-        self.edge_index = graph.edge_index.to(self.device)
         self.x = graph.x.to(self.device)
-        
-        # Get the subgraph and the edge mask (boolean mask over the full graph's edges)
-        self.sub_edge_index, self.edge_mask = self.get_subgraph_and_mask()
-        
-        # Construct the adjacency mask for the subgraph edges
-        self.adj_mask = self.construct_adj_mask(self.sub_edge_index.size(1)).to(self.device)
+        self.edge_index = graph.edge_index.to(self.device)
+        self.adj_mask = self.construct_adj_mask().to(self.device)
 
-    def get_subgraph_and_mask(self):
-        # Get k-hop subgraph around the target node
-        num_hops = 2  # Adjust as needed
-        subset, edge_index_sub, mapping, edge_mask = torch_geometric.utils.k_hop_subgraph(
-            self.target_node.item(), num_hops, self.graph.edge_index, relabel_nodes=False
-        )
-        # edge_mask is a boolean mask over the edges in the full graph
-        return edge_index_sub.to(self.device), edge_mask.to(self.device)
+    def construct_adj_mask(self):
+        num_edges = self.edge_index.size(1)
+        mask = torch.nn.Parameter(torch.FloatTensor(num_edges))
+        std = torch.nn.init.calculate_gain("relu") * math.sqrt(2.0 / (2 * num_edges))
+        with torch.no_grad():
+            mask.normal_(1.0, std)
+        return mask
 
     def forward(self):
-        # Compute the mask values for the subgraph edges
-        sub_adj_mask = torch.sigmoid(self.adj_mask)  # Shape: [num_sub_edges]
+        adj_mask = torch.sigmoid(self.adj_mask)  # Shape: [num_edges]
+        edge_weight = adj_mask
 
-        # Create a full edge mask initialized to ones (no masking)
-        full_edge_mask = torch.ones(self.graph.edge_index.size(1), device=self.device)  # Shape: [num_edges]
-
-        # Apply the learned mask to the subgraph edges in the full edge mask
-        full_edge_mask[self.edge_mask] = sub_adj_mask
-
-        # Apply the full edge mask to the model
-        pred1 = self.base_model(self.x, self.graph.edge_index) #, edge_weight=full_edge_mask
-        pred2 = self.base_model(self.x, self.graph.edge_index) #, edge_weight=1 - full_edge_mask
+        pred1 = self.base_model(self.x, self.edge_index, edge_weight=edge_weight)
+        pred2 = self.base_model(self.x, self.edge_index, edge_weight=1 - edge_weight)
 
         return pred1[self.target_node], pred2[self.target_node]
 
@@ -445,30 +429,20 @@ class ExplainModelNodeMulti(torch.nn.Module):
 
         bpr1 = relu(gam + f_next - pred1_prob[pred_label])
         bpr2 = relu(gam + pred2_prob[pred_label] - cf_next)
-        L1 = torch.linalg.norm(self.adj_mask, ord=1)
+        L1 = torch.norm(self.adj_mask, p=1)
         loss = L1 + lam * (alp * bpr1 + (1 - alp) * bpr2)
         return bpr1, bpr2, L1, loss
 
-    def construct_adj_mask(self, num_edges):
-        mask = torch.nn.Parameter(torch.FloatTensor(num_edges))
-        std = torch.nn.init.calculate_gain("relu") * math.sqrt(2.0 / num_edges)
-        with torch.no_grad():
-            mask.normal_(1.0, std)
-        return mask
-
     def get_masked_adj(self):
-        sub_adj_mask = torch.sigmoid(self.adj_mask)  # Shape: [num_sub_edges]
+        adj_mask = torch.sigmoid(self.adj_mask)  # Shape: [num_edges]
 
-        # Create a full edge mask initialized to ones
-        full_edge_mask = torch.ones(self.graph.edge_index.size(1), device=self.device)
-        full_edge_mask[self.edge_mask] = sub_adj_mask
-
-        num_nodes = self.graph.num_nodes
         edge_index = self.graph.edge_index
+        num_nodes = self.graph.num_nodes
         adj = torch.zeros((num_nodes, num_nodes), device=self.device)
-        adj[edge_index[0], edge_index[1]] = full_edge_mask
+        adj[edge_index[0], edge_index[1]] = adj_mask
         adj = adj + adj.t()
         adj = adj.clamp(max=1)
+
         return adj
 
 

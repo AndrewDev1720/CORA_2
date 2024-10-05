@@ -1,0 +1,84 @@
+exp_name: why # why
+random_seed: 42
+
+
+# data_name: "Karate"
+# data_size: 34
+# num_test: 4
+# input_dim: 34
+# output_dim: 4
+
+
+# data_name: "Cora"
+# data_size: 2708
+# num_test: 1000
+# input_dim: 1433
+# output_dim: 7
+
+# data_name: "CiteSeer"
+# data_size: 3327
+# num_test: 2000
+# input_dim: 3703
+# output_dim: 6
+
+data_name: "PubMed"
+data_size: 19717
+num_test: 1300
+input_dim: 500
+output_dim: 3
+
+
+
+# data_name: "facebookpagepage"
+# data_size: 22470
+# num_test: 2000
+# input_dim: 128
+# output_dim: 4
+
+
+# data_name: "amazon"
+# data_size: 1569960
+# num_test: 10000
+# input_dim: 200
+# output_dim: 107
+
+# data_name: "Facebook"
+# data_size: 1045
+# input_dim: 573
+# output_dim: 3
+
+# data_name: "facebook100"
+# data_size: 1518
+# input_dim: 873
+# output_dim: 5
+
+# data_name: "aml"
+# data_size: 515088
+# input_dim: 31
+# output_dim: 2
+
+# data_name: "aml"
+# data_size: 50000
+# input_dim: 6
+# output_dim: 2
+
+# data_name: "german"
+# data_size: 1000
+# num_test: 500
+# input_dim: 22
+# output_dim: 2
+
+hidden_dim: 16
+model_name: "gcn" # gcn, gat, gin, gcn2, gcn4
+k: 3 # 2, 3, 4
+iterations: 1
+method: "baseline" # baseline 
+batch_size: 16
+
+
+# #########for test########
+test_baseline: "GNNExplainer"
+# test_baseline: "PGExplainer"
+# test_baseline: "GNNMOE"
+# test_baseline: "NaiveSky"
+# test_baseline: "BFS_Iter_Sky"

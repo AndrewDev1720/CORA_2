@@ -137,7 +137,7 @@ def assemble_EXP_Data(explanation, edge_threshold, feature_threshold=None):
         edge_index = exp_edge_index,
         y = y
     )
-    
+
     comp_edges_masks = ~important_edges_masks
     comp_edge_indices = comp_edges_masks.nonzero(as_tuple=True)[0]
     comp_edge_index = edge_index[:,comp_edge_indices]
@@ -277,10 +277,10 @@ def calculate_Metrics(original_graph, exp_subgraph, comp_subgraph, model, node_i
         f_Gi_exp_yi = probs_exp[node_idx, y_true[node_idx]]
 
         fidelity_Plus = f_Gi_yi - f_Gi_comp_yi
-        fidelity_Plus = fidelity_Plus.mean().item()
+        # fidelity_Plus = fidelity_Plus.mean().item()
 
         fidelity_Minus = f_Gi_yi - f_Gi_exp_yi
-        fidelity_Minus = fidelity_Minus.mean().item()
+        # fidelity_Minus = fidelity_Minus.mean().item()
 
         #edge_wise Sparsity
         num_edge_exp = exp_subgraph.edge_index.size(1)

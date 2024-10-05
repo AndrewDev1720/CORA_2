@@ -18,9 +18,94 @@ def arg_parse_exp_node_cora():
     parser.add_argument("--alp", dest="alp", type=float, default=0.6,
                         help="hyper param control factual and counterfactual")
     parser.add_argument("--gam", dest="gam", type=float, default=0.5, help="margin value for bpr loss")
-    parser.add_argument("--mask_thresh", dest="mask_thresh", type=float, default=0.8,
+    parser.add_argument("--mask_thresh", dest="mask_thresh", type=float, default=0.9999,
                         help="threshold to convert relaxed adj matrix to binary")
     return parser.parse_args()
+
+def arg_parse_exp_node_pubmed():
+    """
+    Parses command-line arguments for the PubMed node explanation experiment.
+
+    Returns:
+        argparse.Namespace: Parsed arguments.
+    """
+    parser = argparse.ArgumentParser(description="Node Explanation for PubMed Dataset")
+    
+    # Dataset parameters
+    parser.add_argument("--dataset", dest="dataset", type=str, default="PubMed",
+                        help="Choose a node explanation task (default: PubMed)")
+    
+    # Model parameters
+    parser.add_argument("--model_path", dest="model_path", type=str, default="models/SKY_Pretrained/",
+                        help="Path to the pretrained model to explain (default: models/SKY_Pretrained/)")
+    
+    # Device parameters
+    parser.add_argument("--gpu", dest="gpu", action="store_true", help="Whether to use GPU")
+    parser.add_argument("--cuda", dest="cuda", type=str, default='0', help="Which CUDA device to use (default: '0')")
+    
+    # Optimization parameters
+    parser.add_argument("--weight_decay", dest="weight_decay", type=float, default=0.005,
+                        help="L2 norm to the weights (default: 0.005)")
+    parser.add_argument("--opt", dest="opt", type=str, default="adam", help="Optimizer (default: adam)")
+    parser.add_argument("--lr", dest="lr", type=float, default=0.01, help="Learning rate (default: 0.01)")
+    parser.add_argument("--num_epochs", dest="num_epochs", type=int, default=500,
+                        help="Number of training epochs (default: 500)")
+    
+    # Explainer parameters
+    parser.add_argument("--lam", dest="lam", type=float, default=500,
+                        help="Hyperparameter controlling the trade-off between explanation complexity and strength (default: 500)")
+    parser.add_argument("--alp", dest="alp", type=float, default=0.6,
+                        help="Hyperparameter controlling factual and counterfactual (default: 0.6)")
+    parser.add_argument("--gam", dest="gam", type=float, default=0.5,
+                        help="Margin value for BPR loss (default: 0.5)")
+    parser.add_argument("--mask_thresh", dest="mask_thresh", type=float, default=0.9999,
+                        help="Threshold to convert relaxed adjacency matrix to binary (default: 0.9999)")
+    
+    return parser.parse_args()
+
+import argparse
+
+def arg_parse_exp_node_facebookpp():
+    """
+    Parses command-line arguments for the Facebook Pages node explanation experiment.
+
+    Returns:
+        argparse.Namespace: Parsed arguments.
+    """
+    parser = argparse.ArgumentParser(description="Node Explanation for Facebook Pages Dataset")
+
+    # Dataset parameters
+    parser.add_argument("--dataset", dest="dataset", type=str, default="facebookpagepage",
+                        help="Choose a node explanation task (default: facebookpagepage)")
+
+    # Model parameters
+    parser.add_argument("--model_path", dest="model_path", type=str, default="models/SKY_Pretrained/",
+                        help="Path to the pretrained model to explain (default: models/SKY_Pretrained/)")
+
+    # Device parameters
+    parser.add_argument("--gpu", dest="gpu", action="store_true", help="Whether to use GPU")
+    parser.add_argument("--cuda", dest="cuda", type=str, default='0', help="Which CUDA device to use (default: '0')")
+
+    # Optimization parameters
+    parser.add_argument("--weight_decay", dest="weight_decay", type=float, default=0.005,
+                        help="L2 norm to the weights (default: 0.005)")
+    parser.add_argument("--opt", dest="opt", type=str, default="adam", help="Optimizer (default: adam)")
+    parser.add_argument("--lr", dest="lr", type=float, default=0.01, help="Learning rate (default: 0.01)")
+    parser.add_argument("--num_epochs", dest="num_epochs", type=int, default=500,
+                        help="Number of training epochs (default: 500)")
+
+    # Explainer parameters
+    parser.add_argument("--lam", dest="lam", type=float, default=500,
+                        help="Hyperparameter controlling the trade-off between explanation complexity and strength (default: 500)")
+    parser.add_argument("--alp", dest="alp", type=float, default=0.6,
+                        help="Hyperparameter controlling factual and counterfactual (default: 0.6)")
+    parser.add_argument("--gam", dest="gam", type=float, default=0.5,
+                        help="Margin value for BPR loss (default: 0.5)")
+    parser.add_argument("--mask_thresh", dest="mask_thresh", type=float, default=0.9999,
+                        help="Threshold to convert relaxed adjacency matrix to binary (default: 0.9999)")
+
+    return parser.parse_args()
+
 
 def arg_parse_train_graph_mutag_0():
     parser = argparse.ArgumentParser()

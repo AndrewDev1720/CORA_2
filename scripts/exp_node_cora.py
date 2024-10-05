@@ -18,6 +18,7 @@ def print_cora_characteristics(data):
     print(f"NumTestSamples: {data.test_mask.sum().item()}")
 
 if __name__ == "__main__":
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
     torch.manual_seed(1000)
     np.random.seed(0)
     np.set_printoptions(threshold=sys.maxsize)
@@ -33,10 +34,10 @@ if __name__ == "__main__":
     dataset = Planetoid(root='/tmp/Cora', name='Cora')
 
     # Set the device to GPU or CPU
-    if exp_args.gpu:
-        device = torch.device('cuda:%s' % exp_args.cuda)
-    else:
-        device = 'cpu'
+    # if exp_args.gpu:
+    #     device = torch.device('cuda:%s' % exp_args.cuda)
+    # else:
+    #     device = 'cpu'
 
     # Load the pretrained model path
     model_path = exp_args.model_path
